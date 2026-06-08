@@ -4,7 +4,7 @@ about: Là người thiết kế hệ thống, các task liên quan đến luồ
   trúc bảng hay thuật toán tìm đường cần được định nghĩa đầu vào/đầu ra cực kỳ khắt
   khe.
 title: ''
-labels: algorithm, backend
+labels: algorithm, backend, database
 assignees: ''
 
 ---

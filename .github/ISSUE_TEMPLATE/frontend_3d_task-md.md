@@ -2,7 +2,7 @@
 name: frontend_3d_task.md
 about: Mẫu này tập trung vào giao diện, trải nghiệm người dùng và chuyển động.
 title: ''
-labels: 3d-scene, frontend
+labels: 3d-scene, frontend, vehicle
 assignees: ''
 
 ---

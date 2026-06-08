@@ -3,7 +3,7 @@ name: bug_report.md
 about: Dành riêng cho Thành viên 8 (Testing) khi phát hiện hệ thống chạy sai để báo
   lại cho các dev khác sửa.
 title: ''
-labels: bug
+labels: bug, pathfinding
 assignees: ''
 
 ---
