@@ -146,9 +146,14 @@ const io = new Server(server, {
   }
 });
 
+// Export io để các route/controller có thể emit event
+export { io };
+
 socketHandler(io);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server đang chạy thành công tại: http://localhost:${PORT}`);
+// ⚠ PHẢI dùng server.listen() (không phải app.listen()) để Socket.IO hoạt động!
+server.listen(PORT, () => {
+  console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
+  console.log(`📡 WebSocket đã sẵn sàng trên cùng port ${PORT}`);
 });
