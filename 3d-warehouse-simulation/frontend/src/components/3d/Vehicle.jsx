@@ -7,7 +7,7 @@ import { gridTo3D } from '../../utils/mapping';
 import socket from '../../sockets/socketClient'; // Import Socket
 
 export default function Vehicle() {
-  const { scene } = useGLTF('/agv.glb'); 
+  const { scene } = useGLTF('/models/xe.glb'); 
   const vehicleRef = useRef();
   
   const currentPath = useStore((state) => state.currentPath);

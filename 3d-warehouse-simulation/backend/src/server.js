@@ -152,8 +152,22 @@ export { io };
 socketHandler(io);
 
 const PORT = process.env.PORT || 5000;
+
+// Bắt lỗi cổng bị chiếm để KHÔNG ném 'error' event chưa xử lý (crash xấu).
+// Nguyên nhân thường gặp: còn 1 tiến trình backend cũ đang giữ cổng chưa tắt hẳn.
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`🚨 Cổng ${PORT} đang bị chiếm bởi một tiến trình khác (thường là backend cũ chưa tắt).`);
+    console.error(`   → Tắt tiến trình đó rồi chạy lại, hoặc đổi cổng bằng biến môi trường PORT.`);
+    console.error(`   → Windows: netstat -ano | findstr :${PORT}  rồi  taskkill /PID <pid> /F`);
+    process.exit(1);
+  }
+  throw err;
+});
+
 // ⚠ PHẢI dùng server.listen() (không phải app.listen()) để Socket.IO hoạt động!
 server.listen(PORT, () => {
   console.log(`🚀 Server đang chạy tại: http://localhost:${PORT}`);
   console.log(`📡 WebSocket đã sẵn sàng trên cùng port ${PORT}`);
 });
+// (Lưu file này để node --watch khởi động lại server khi cần)

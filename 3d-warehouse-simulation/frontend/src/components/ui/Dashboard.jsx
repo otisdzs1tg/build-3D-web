@@ -5,13 +5,13 @@ export default function Dashboard() {
   const { isMoving, fetchPathFromBackend, agvPos2D } = useStore();
 
   const handleStart = () => {
-    if (isMoving) return; 
-    
+    if (isMoving) return;
+
     const startPos = agvPos2D;
     const endPos = { row: 15, col: 15 }; // Giả lập đích đến, sau này bạn nối với input UI
-    
+
     // Gọi hàm fetch thay vì tự tính toán local
-    fetchPathFromBackend(startPos, endPos); 
+    fetchPathFromBackend(startPos, endPos);
   };
 
   return (
@@ -24,8 +24,8 @@ export default function Dashboard() {
       <p>Trạng thái: <strong style={{ color: isMoving ? '#00ff00' : '#ffaa00' }}>
         {isMoving ? 'ĐANG CHẠY' : 'ĐANG DỪNG'}
       </strong></p>
-      
-      <button 
+
+      <button
         onClick={handleStart}
         disabled={isMoving}
         style={{ padding: '10px 20px', marginTop: '10px', cursor: 'pointer' }}

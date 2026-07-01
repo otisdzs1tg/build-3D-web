@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>So sánh AGV vs Xe</title>
+  <style>
+    body { margin: 0; background: #1a1a2e; color: white; font-family: Arial; display: flex; flex-direction: column; height: 100vh; }
+    .header { text-align: center; padding: 10px; font-size: 20px; }
+    .container { display: flex; flex: 1; }
+    .panel { flex: 1; position: relative; border: 2px solid #333; }
+    .label { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 8px; z-index: 10; font-size: 18px; font-weight: bold; }
+    .label.agv { color: #00bcd4; }
+    .label.xe { color: #ff9800; }
+    canvas { width: 100% !important; height: 100% !important; }
+  </style>
+</head>
+<body>
+  <div class="header">🔍 SO SÁNH 2 MODEL: agv.glb vs xe.glb</div>
+  <div class="container">
+    <div class="panel">
+      <div class="label agv">📦 agv.glb (Hiện tại)</div>
+      <canvas id="canvas1"></canvas>
+    </div>
+    <div class="panel">
+      <div class="label xe">🚗 xe.glb (Mới)</div>
+      <canvas id="canvas2"></canvas>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    function setupScene(canvasId, modelPath, label) {
+      const canvas = document.getElementById(canvasId);
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setClearColor(0x1a1a2e);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+      camera.position.set(3, 2, 3);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      dirLight.position.set(5, 5, 5);
+      scene.add(dirLight);
+
+      // Grid
+      const grid = new THREE.GridHelper(10, 10, 0x4d88ff, 0x333333);
+      scene.add(grid);
+
+      const controls = new OrbitControls(camera, canvas);
+      controls.enableDamping = true;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 2;
+
+      const loader = new GLTFLoader();
+      loader.load(modelPath, (gltf) => {
+        const model = gltf.scene;
+        // Center model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        model.position.sub(center);
+        model.position.y += size.y / 2;
+
+        // Log size info
+        console.log(`${label}: size = ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}`);
+        
+        // Add size info to page
+        const info = document.createElement('div');
+        info.style.cssText = 'position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);padding:8px 16px;border-radius:8px;font-size:14px;z-index:10;';
+        info.innerHTML = `Kích thước: ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)}`;
+        canvas.parentElement.appendChild(info);
+
+        scene.add(model);
+
+        // Adjust camera to fit model
+        const maxDim = Math.max(size.x, size.y, size.z);
+        camera.position.set(maxDim * 1.5, maxDim * 1.2, maxDim * 1.5);
+        controls.update();
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        const rect = canvas.parentElement.getBoundingClientRect();
+        renderer.setSize(rect.width, rect.height, false);
+        camera.aspect = rect.width / rect.height;
+        camera.updateProjectionMatrix();
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    setupScene('canvas1', '/models/agv.glb', 'agv.glb');
+    setupScene('canvas2', '/models/xe.glb', 'xe.glb');
+  </script>
+</body>
+</html>

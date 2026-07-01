@@ -75,32 +75,38 @@ export const complexSlerp = (a, b, t) => {
 // ═══════════════════════════════════════════
 
 /**
- * Nội suy Catmull-Rom cho 1 chiều
- * Cho 4 điểm p0,p1,p2,p3 và t ∈ [0,1], tính điểm trên đường cong giữa p1 và p2
+ * Nội suy Catmull-Rom cho 1 chiều — có tension để kiểm soát độ cong
+ * tension = 0: đường thẳng, tension = 1: Catmull-Rom gốc
+ * Giá trị 0.3-0.5 cho đường cong nhẹ mà không đâm vào vật cản
  */
-const catmullRom1D = (p0, p1, p2, p3, t) => {
+const catmullRom1D = (p0, p1, p2, p3, t, tension = 0.35) => {
   const t2 = t * t;
   const t3 = t2 * t;
+  // Áp dụng tension: giảm ảnh hưởng của điểm lân cận
   return 0.5 * (
     (2 * p1) +
-    (-p0 + p2) * t +
-    (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
-    (-p0 + 3 * p1 - 3 * p2 + p3) * t3
+    (-p0 + p2) * t * tension +
+    (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 * tension +
+    (-p0 + 3 * p1 - 3 * p2 + p3) * t3 * tension
   );
 };
 
 /**
  * Tạo đường cong mượt từ danh sách waypoint (các điểm grid rời rạc)
+ * Có clamping để đảm bảo đường cong KHÔNG đi ra ngoài hành lang an toàn
  * 
  * @param {Array<{x: number, z: number}>} waypoints - Các điểm ngoặt
  * @param {number} subdivisions - Số điểm nội suy giữa mỗi cặp waypoint
  * @returns {Array<{x: number, z: number, angle: number}>} - Đường cong mượt + góc xoay
  */
-export const generateSmoothPath = (waypoints, subdivisions = 12) => {
+export const generateSmoothPath = (waypoints, subdivisions = 8) => {
   if (!waypoints || waypoints.length < 2) return waypoints || [];
   
   const smoothPoints = [];
   const n = waypoints.length;
+  
+  // Margin cho phép đường cong lệch khỏi hành lang (0.3 = 30% ô)
+  const MARGIN = 0.3;
   
   for (let i = 0; i < n - 1; i++) {
     // 4 điểm điều khiển cho Catmull-Rom
@@ -109,10 +115,21 @@ export const generateSmoothPath = (waypoints, subdivisions = 12) => {
     const p2 = waypoints[i + 1];
     const p3 = waypoints[Math.min(n - 1, i + 2)];
     
+    // Tính giới hạn hành lang an toàn giữa p1 và p2
+    const minX = Math.min(p1.x, p2.x) - MARGIN;
+    const maxX = Math.max(p1.x, p2.x) + MARGIN;
+    const minZ = Math.min(p1.z, p2.z) - MARGIN;
+    const maxZ = Math.max(p1.z, p2.z) + MARGIN;
+    
     for (let j = 0; j < subdivisions; j++) {
       const t = j / subdivisions;
-      const x = catmullRom1D(p0.x, p1.x, p2.x, p3.x, t);
-      const z = catmullRom1D(p0.z, p1.z, p2.z, p3.z, t);
+      let x = catmullRom1D(p0.x, p1.x, p2.x, p3.x, t);
+      let z = catmullRom1D(p0.z, p1.z, p2.z, p3.z, t);
+      
+      // Clamp: giữ điểm trong hành lang an toàn
+      x = Math.max(minX, Math.min(maxX, x));
+      z = Math.max(minZ, Math.min(maxZ, z));
+      
       smoothPoints.push({ x, z });
     }
   }
