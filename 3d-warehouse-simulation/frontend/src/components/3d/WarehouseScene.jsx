@@ -225,7 +225,8 @@ export default function WarehouseScene() {
   const smoothPath = useSimStore((s) => s.smoothPath);
   const isMoving = useSimStore((s) => s.isMoving);
 
-  // ═══ Vị trí công nhân: chọn ô trống trải đều, ưu tiên cạnh kệ / làn dẫn ═══
+  // ═══ Vị trí công nhân: chọn NGẪU NHIÊN vài ô cạnh kệ, số lượng ít ═══
+  const WORKER_COUNT = 4; // ít công nhân, rải ngẫu nhiên quanh các kệ
   const workers = useMemo(() => {
     if (!matrix.length) return [];
     const rows = matrix.length;
@@ -237,16 +238,30 @@ export default function WarehouseScene() {
     const nearBuilding = (r, c) =>
       isInWarehouseZone(r - 1, c) || isInWarehouseZone(r + 1, c) ||
       isInWarehouseZone(r, c - 1) || isInWarehouseZone(r, c + 1);
+
+    // Gom mọi ô trống hợp lệ cạnh kệ → rồi trộn ngẫu nhiên.
+    const candidates = [];
+    for (let r = 1; r < rows - 1; r++) {
+      for (let c = 1; c < cols - 1; c++) {
+        if (matrix[r][c] !== 0 || isInWarehouseZone(r, c)) continue;
+        if (c === 10) continue;              // chừa làn dẫn AGV (tránh xe chạy xuyên người)
+        if (nearBuilding(r, c)) continue;    // tránh đứng sát kho/VP
+        if (!nearRack(r, c)) continue;       // chỉ đứng cạnh KỆ
+        candidates.push([c, r]);
+      }
+    }
+    // Trộn Fisher–Yates (chạy 1 lần mỗi khi đổi bản đồ nhờ useMemo).
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
+    // Lấy tối đa WORKER_COUNT ô, giữ khoảng cách để không chụm lại.
     const chosen = [];
     const far = (c, r) => chosen.every(([cc, rr]) => Math.max(Math.abs(cc - c), Math.abs(rr - r)) >= 3);
-    for (let r = 1; r < rows - 1 && chosen.length < 11; r++) {
-      for (let c = 1; c < cols - 1 && chosen.length < 11; c++) {
-        if (matrix[r][c] !== 0 || isInWarehouseZone(r, c)) continue;
-        if (c === 10) continue;                            // chừa làn dẫn AGV (tránh xe chạy xuyên người)
-        if (nearBuilding(r, c)) continue;                  // XOÁ công nhân quanh kho/VP
-        if (!nearRack(r, c) || !far(c, r)) continue;       // chỉ đứng cạnh KỆ, trải đều
-        chosen.push([c, r]);
-      }
+    for (const [c, r] of candidates) {
+      if (chosen.length >= WORKER_COUNT) break;
+      if (far(c, r)) chosen.push([c, r]);
     }
     return chosen.map(([c, r], i) => ({
       key: `worker-${c}-${r}`,
